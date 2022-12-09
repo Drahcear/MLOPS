@@ -5,6 +5,9 @@ import pyspark
 from pyspark.sql.functions import from_json, col
 from datetime import datetime, date, timedelta
 from pyspark.sql.functions import *
+import pyspark.sql.functions as f
+import plotly.express as px
+
 
 def get_dataframe():
     spark = SparkSession.builder.master("local").appName("Analytics").getOrCreate()
@@ -44,3 +47,13 @@ def from_range(df, start, end):
         true_count.append(from_date(df, result).filter(col("IsLegit") == True).count())
         false_count.append(from_date(df, result).filter(col("IsLegit") == False).count())
     return total_count, list_day, true_count, false_count
+
+def plot_per_coutry(df, date):
+    df_tmp = df.groupBy("country").count()
+    df_country = df_tmp.select("country").collect()
+    df_count = df_tmp.select("count").collect()
+    df_tmp2 = df_tmp.withColumn("json", f.to_json(f.struct("country", "count")))
+    country_dict = df_tmp2.select("json").rdd.map(lambda x: json.loads(x[0])).collect()
+    fig = px.scatter_geo(country_dict, locations='country', color='country',
+                     size='count', title='Countries by Number')
+    return fig

@@ -21,3 +21,4 @@ fig = px.bar(x=dates, y=[true_count, false_count], barmode="group", labels={'x':
 newnames = {"wide_variable_0":"True", "wide_variable_1":"False"}
 fig.for_each_trace(lambda t: t.update(name = newnames[t.name]))
 st.plotly_chart(fig)
+st.plotly_chart(plot_per_coutry(df, ""))
