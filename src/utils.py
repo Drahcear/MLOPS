@@ -11,7 +11,7 @@ import plotly.express as px
 
 def get_dataframe():
     spark = SparkSession.builder.master("local").appName("Analytics").getOrCreate()
-    df = spark.read.option("header","true").csv("2022*/*.csv")
+    df = spark.read.option("header","true").csv("../2022*/*.csv")
     df = df.withColumn('date', to_timestamp(df.date, 'yyyy/MM/dd HH:mm:ss'))
     df = df.withColumn("day", to_date(df.date))
     df = df.withColumn("time", date_format(df.date, "HH:mm:ss"))
@@ -34,26 +34,35 @@ def days_between(d1, d2):
     d2 = datetime.strptime(d2, "%Y-%m-%d")
     return (d2 - d1).days
 
-def from_range(df, start, end):
-    total_count = df.filter((df.day >= start) & (df.day <= end)).count()
-    list_day = []
-    true_count = []
-    false_count = []
-    nb_day = days_between(start, end)
-    for i in range(nb_day + 1):
-        date = datetime.strptime(start, '%Y-%m-%d')
-        result = date + timedelta(days=i)
-        list_day.append(result)
-        true_count.append(from_date(df, result).filter(col("IsLegit") == True).count())
-        false_count.append(from_date(df, result).filter(col("IsLegit") == False).count())
-    return total_count, list_day, true_count, false_count
+def from_range(df, date):    
+    list_day = []    
+    true_count = from_date(df, date).filter(col("IsLegit") == True).count()
+    false_count = from_date(df, date).filter(col("IsLegit") == False).count()
+    return df.count(), true_count, false_count
 
 def plot_per_coutry(df, date):
+    if date != "":
+        df = from_date(df, date)
+    df.show()
     df_tmp = df.groupBy("country").count()
     df_country = df_tmp.select("country").collect()
     df_count = df_tmp.select("count").collect()
     df_tmp2 = df_tmp.withColumn("json", f.to_json(f.struct("country", "count")))
     country_dict = df_tmp2.select("json").rdd.map(lambda x: json.loads(x[0])).collect()
-    fig = px.scatter_geo(country_dict, locations='country', color='country',
+    if len(country_dict) == 0 :
+        fig = px.scatter_geo()
+    else:
+        fig = px.scatter_geo(country_dict, locations='country', color='country',
                      size='count', title='Countries by Number')
     return fig
+
+
+def get_most_used_false_card(df):    
+    
+    name = df.filter(df.IsLegit == "False").groupBy("name").count().sort(desc("count")).limit(1).collect()
+    if len(name) == 0:
+        return "", "", "", ""    
+    name = name[0][0]
+    res = df[df.name == name].limit(1).collect()[0]
+    
+    return res["name"], res["number"], res["CVC"], res["expire"]
