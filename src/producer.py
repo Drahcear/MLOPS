@@ -19,7 +19,6 @@ df = df.astype(str)
 
 machine_id = createUID()
 for i in range (100):
-    print(i)
     row = df.sample().values.flatten().tolist()
-    sender = Sender(machine_id, "t3", "localhost", Card(row[0], row[1], row[2], row[3]))
+    sender = Sender(machine_id, "bank", "localhost", Card(row[0], row[1], row[2], row[3]))
     sender.send()

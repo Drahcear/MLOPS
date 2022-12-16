@@ -53,9 +53,20 @@ df.writeStream \
   .outputMode("append")\
   .format("csv")\
   .start().awaitTermination()
+
 """
-with open("../" + datetime.now().strftime('%Y-%m-%d')+"/log.txt", "a") as f:
-  consumer = KafkaConsumer('t4')
+
+import os
+
+folder_name = "../" + datetime.now().strftime('%Y-%m-%d')
+
+if not os.path.exists(folder_name):
+        os.makedirs(folder_name)
+
+
+with open("../" + datetime.now().strftime('%Y-%m-%d')+"/log.csv", "a+") as f:
+  f.write("date,ID,country,name,number,CVC,expire,IsLegit,reason\n")
+  consumer = KafkaConsumer('server')
   for msg in consumer:
     value = json.loads(msg.value)
     #if value["res"] == "False":

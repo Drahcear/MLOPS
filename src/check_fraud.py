@@ -48,11 +48,10 @@ df = spark.read.option("header","true").csv("../DB/client.csv")
 banned_countries = ['PRK', 'RUS', 'IRN', 'CUB', 'SDN', 'SYR', 'BEL']
 producer = KafkaProducer(bootstrap_servers="localhost")
 
-consumer = KafkaConsumer('t3')
+consumer = KafkaConsumer('bank')
 
 for msg in consumer:
    value = json.loads(msg.value)
-   res, reason = credit_card_check(value)
-   time.sleep(0.3)
+   res, reason = credit_card_check(value)   
    part1 = {"IsLegit": str(res), "reason": reason}
-   send({**value, **part1}, producer, "t4")
+   send({**value, **part1}, producer, "server")
